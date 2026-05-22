@@ -42,7 +42,6 @@ class BleService {
 
       await requestPermissions();
 
-      /// delay cho Android BLE stack
       await Future.delayed(
         const Duration(seconds: 1),
       );
@@ -51,6 +50,8 @@ class BleService {
 
       final completer = Completer<BluetoothDevice?>();
 
+      Timer? timeoutTimer;
+
       /// stop old scan
       try {
         await FlutterBluePlus.stopScan();
@@ -58,83 +59,11 @@ class BleService {
 
       await _scanSubscription?.cancel();
 
-      /// start scan
-      await FlutterBluePlus.startScan(
-        timeout: const Duration(seconds: 8),
-      );
-
-      _scanSubscription = FlutterBluePlus.scanResults.listen((results) async {
-        for (ScanResult result in results) {
-          final device = result.device;
-
-          print("----------------");
-          print("NAME: ${device.platformName}");
-          print("RSSI: ${result.rssi}");
-
-          /// match name
-          final correctName = device.platformName == BleConstants.deviceName;
-
-          /// match service UUID
-          final hasService = result.advertisementData.serviceUuids
-              .contains(BleConstants.serviceUuid);
-
-          if (correctName || hasService) {
-            try {
-              await FlutterBluePlus.stopScan();
-
-              await _scanSubscription?.cancel();
-
-              /// small delay
-              await Future.delayed(
-                const Duration(milliseconds: 500),
-              );
-
-              print("CONNECTING...");
-
-              await device.connect();
-
-              await Future.delayed(
-                Duration(seconds: 1),
-              );
-
-              await device.discoverServices();
-
-              await Future.delayed(
-                Duration(seconds: 1),
-              );
-
-              print("CONNECTED SUCCESS");
-
-              connectedDevice = device;
-
-              if (!completer.isCompleted) {
-                completer.complete(device);
-              }
-
-              // /// start listener AFTER complete
-              // Future.microtask(() async {
-              //   try {
-              //     await startListeningSensor();
-              //   } catch (e) {
-              //     print("LISTENER ERROR: $e");
-              //   }
-              // });
-            } catch (e) {
-              print("CONNECT ERROR: $e");
-
-              if (!completer.isCompleted) {
-                completer.complete(null);
-              }
-            }
-
-            break;
-          }
-        }
-      });
-
-      /// timeout fallback
-      Timer(
-        const Duration(seconds: 12),
+      /// =========================
+      /// TIMEOUT TIMER
+      /// =========================
+      timeoutTimer = Timer(
+        const Duration(seconds: 60),
         () async {
           if (!completer.isCompleted) {
             print("SCAN TIMEOUT");
@@ -149,6 +78,90 @@ class BleService {
           }
         },
       );
+
+      /// =========================
+      /// START SCAN
+      /// =========================
+      await FlutterBluePlus.startScan(
+        timeout: const Duration(seconds: 8),
+      );
+
+      _scanSubscription = FlutterBluePlus.scanResults.listen((results) async {
+        /// avoid duplicate callback
+        if (completer.isCompleted) return;
+
+        for (ScanResult result in results) {
+          final device = result.device;
+
+          print("----------------");
+          print("NAME: ${device.platformName}");
+          print("RSSI: ${result.rssi}");
+
+          final correctName = device.platformName == BleConstants.deviceName;
+
+          final hasService = result.advertisementData.serviceUuids
+              .contains(BleConstants.serviceUuid);
+
+          if (correctName || hasService) {
+            try {
+              /// stop scan
+              await FlutterBluePlus.stopScan();
+
+              await _scanSubscription?.cancel();
+
+              await Future.delayed(
+                const Duration(milliseconds: 500),
+              );
+
+              print("CONNECTING...");
+
+              /// disconnect old
+              try {
+                await device.disconnect();
+              } catch (_) {}
+
+              await Future.delayed(
+                const Duration(milliseconds: 500),
+              );
+
+              /// connect
+              await device.connect(
+                timeout: const Duration(seconds: 15),
+              );
+
+              await Future.delayed(
+                const Duration(seconds: 1),
+              );
+
+              /// discover services
+              await device.discoverServices();
+
+              await Future.delayed(
+                const Duration(seconds: 1),
+              );
+
+              /// cancel timeout
+              timeoutTimer?.cancel();
+
+              print("CONNECTED SUCCESS");
+
+              connectedDevice = device;
+
+              if (!completer.isCompleted) {
+                completer.complete(device);
+              }
+            } catch (e) {
+              print("CONNECT ERROR: $e");
+
+              if (!completer.isCompleted) {
+                completer.complete(null);
+              }
+            }
+
+            break;
+          }
+        }
+      });
 
       return completer.future;
     } catch (e) {

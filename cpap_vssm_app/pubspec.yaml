@@ -109,9 +109,9 @@ flutter_launcher_icons:
   android: true
   ios: true
 
-  image_path: "assets/icons/app_icon.png"
+  image_path: "assets/icons/mainIcon.png"
 
   adaptive_icon_background: "#0B1020"
-  adaptive_icon_foreground: "assets/icons/app_icon.png"
+  adaptive_icon_foreground: "assets/icons/mainIcon.png"
 
   min_sdk_android: 21
