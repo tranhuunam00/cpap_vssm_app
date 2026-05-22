@@ -50,7 +50,9 @@ class _DashboardPageState extends State<DashboardPage> {
   // BLOWER
   // =====================================================
 
-  double currentPwm = 0;
+  double currentPwm = 55;
+  double pendingPwm = 55;
+  bool pwmChanged = false;
 
   bool blowerRunning = false;
 
@@ -389,6 +391,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
           currentPwm = pwm.toDouble();
 
+          if (!pwmChanged) {
+            pendingPwm = currentPwm;
+          }
+
           blowerRunning = pwm > 0;
 
           // =============================================
@@ -676,6 +682,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       // SLIDER
                       // =====================================
 
+                      // =====================================
+// SLIDER
+// =====================================
+
                       Column(
                         children: [
                           Row(
@@ -688,16 +698,17 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                               ),
                               Text(
-                                "${currentPwm.toInt()}",
-                                style: const TextStyle(
-                                  color: Colors.blue,
+                                "${pendingPwm.toInt()}",
+                                style: TextStyle(
+                                  color:
+                                      pwmChanged ? Colors.orange : Colors.blue,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
                           Slider(
-                            value: currentPwm,
+                            value: pendingPwm,
                             min: 0,
                             max: 255,
                             divisions: 255,
@@ -705,14 +716,53 @@ class _DashboardPageState extends State<DashboardPage> {
                             inactiveColor: Colors.grey.shade300,
                             onChanged: (v) {
                               setState(() {
-                                currentPwm = v;
+                                pendingPwm = v;
+                                pwmChanged =
+                                    pendingPwm.toInt() != currentPwm.toInt();
                               });
                             },
-                            onChangeEnd: (v) async {
-                              await bleService.sendAction(
-                                "PWM:${v.toInt()}",
-                              );
-                            },
+                          ),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: pwmChanged
+                                    ? Colors.orange
+                                    : Colors.grey.shade400,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              onPressed: pwmChanged
+                                  ? () async {
+                                      final pwmValue = pendingPwm.toInt();
+
+                                      await bleService.sendAction(
+                                        "PWM:$pwmValue",
+                                      );
+
+                                      setState(() {
+                                        currentPwm = pendingPwm;
+                                        pwmChanged = false;
+                                      });
+                                    }
+                                  : null,
+                              icon: const Icon(
+                                Icons.check_circle,
+                                color: Colors.white,
+                              ),
+                              label: const Text(
+                                "Áp dụng tốc độ",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
