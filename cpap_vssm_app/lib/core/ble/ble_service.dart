@@ -8,6 +8,11 @@ import 'ble_constants.dart';
 
 class BleService {
   BluetoothDevice? connectedDevice;
+  BluetoothCharacteristic? actionCharacteristic;
+  Timer? rssiTimer;
+  final StreamController<int> rssiController = StreamController.broadcast();
+
+  Stream<int> get rssiStream => rssiController.stream;
 
   StreamSubscription<List<ScanResult>>? _scanSubscription;
 
@@ -145,6 +150,8 @@ class BleService {
 
               print("CONNECTED SUCCESS");
 
+              startRssiMonitoring();
+
               connectedDevice = device;
 
               if (!completer.isCompleted) {
@@ -176,7 +183,9 @@ class BleService {
   /// =========================
   Future<void> disconnect() async {
     try {
+      rssiTimer?.cancel();
       await connectedDevice?.disconnect();
+
       connectedDevice = null;
     } catch (_) {}
   }
@@ -223,8 +232,60 @@ class BleService {
 
             print("LISTENING SENSOR DATA");
           }
+
+          if (characteristic.uuid == BleConstants.actionCharacteristicUuid) {
+            print("ACTION CHARACTERISTIC FOUND");
+
+            actionCharacteristic = characteristic;
+          }
         }
       }
     }
+  }
+
+  Future<void> sendAction(
+    String action,
+  ) async {
+    try {
+      if (actionCharacteristic == null) {
+        print(
+          "ACTION CHARACTERISTIC NULL",
+        );
+
+        return;
+      }
+
+      await actionCharacteristic!.write(
+        action.codeUnits,
+        withoutResponse: false,
+      );
+
+      print("SEND ACTION: $action");
+    } catch (e) {
+      print("SEND ACTION ERROR: $e");
+    }
+  }
+
+  void startRssiMonitoring() {
+    rssiTimer?.cancel();
+
+    rssiTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) async {
+        try {
+          if (connectedDevice == null) {
+            return;
+          }
+
+          final rssi = await connectedDevice!.readRssi();
+
+          print("RSSI REALTIME: $rssi");
+
+          rssiController.add(rssi);
+        } catch (e) {
+          print("RSSI ERROR: $e");
+        }
+      },
+    );
   }
 }
