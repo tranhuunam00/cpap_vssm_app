@@ -179,7 +179,7 @@ class _DashboardPageState extends State<DashboardPage> {
         backgroundColor: Colors.white,
         centerTitle: true,
         title: const Text(
-          "CPAP VSSM",
+          "SiPAP",
           style: TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
@@ -301,7 +301,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      "Mất kết nối CPAP VSSM",
+                      "Mất kết nối SiPAP",
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,

@@ -105,7 +105,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
                   /// TITLE
                   /// =========================
                   const Text(
-                    "Kết nối thiết bị \n CPAP VSSM",
+                    "Kết nối thiết bị \n SiPAP",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 30,
@@ -120,7 +120,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
                   /// SUBTITLE
                   /// =========================
                   const Text(
-                    "Đảm bảo thiết bị CPAP VSSM kết nối nguồn và ở khoảng cách tối đa 5m",
+                    "Đảm bảo thiết bị SiPAP kết nối nguồn và ở khoảng cách tối đa 5m",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
