@@ -383,7 +383,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
           lastPacketTime = now;
 
-          final flow = (data["flow"] ?? 0).toDouble();
+          final pressure = (data["pressure"] * 10 ?? 0).toDouble();
 
           final rpm = data["rpm"] ?? 0;
 
@@ -512,12 +512,12 @@ class _DashboardPageState extends State<DashboardPage> {
                   childAspectRatio: 0.9,
                   children: [
                     _sensorCard(
-                      title: "LƯU LƯỢNG",
-                      value: flow.toStringAsFixed(1),
-                      unit: "slm",
-                      icon: Icons.air,
-                      color: Colors.blue,
-                      subtitle: "Dòng khí hiện tại",
+                      title: "ÁP SUẤT",
+                      value: pressure.toStringAsFixed(1),
+                      unit: "cmH₂O",
+                      icon: Icons.speed,
+                      color: Colors.orange,
+                      subtitle: "Áp suất hiện tại",
                     ),
                   ],
                 ),
@@ -710,8 +710,8 @@ class _DashboardPageState extends State<DashboardPage> {
                           Slider(
                             value: pendingPwm,
                             min: 0,
-                            max: 255,
-                            divisions: 255,
+                            max: 100,
+                            divisions: 100,
                             activeColor: Colors.blue,
                             inactiveColor: Colors.grey.shade300,
                             onChanged: (v) {
@@ -851,7 +851,7 @@ class _DashboardPageState extends State<DashboardPage> {
           Text(
             "$value $unit",
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
           ),
